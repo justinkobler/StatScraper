@@ -48,7 +48,12 @@ def compareStatsToProp(soupContent, stat, overUnder, gameLimit, opponent):
             if gameLimit != None and totGames >= gameLimit:
                 break
             gameinfo = game.find_all(class_ = "Table__TD")
-            opp = gameinfo[1].find("span", "pr2 TeamLink__Logo").next_sibling.a.string.lower()
+            if len(gameinfo) < 17:
+                continue
+            try:
+                opp = gameinfo[1].find("span", "pr2 TeamLink__Logo").next_sibling.a.string.lower()
+            except AttributeError:
+                continue
             val = 0.
             if stat == "pra":
                 points = float(gameinfo[statcodes.get('pts')].text)
@@ -98,7 +103,8 @@ def compareStatsToProp(soupContent, stat, overUnder, gameLimit, opponent):
                 if opponent == opp:
                     underOpp+=1
             totGames+=1
-            if opponent == opp:
+            # Common accident - put 3 letter abbrev for teams that have 2 letter abbrev on ESPN.com
+            if opponent == opp or (len(opp) == 2 and opponent[0:2] == opp):
                     totOppGames+=1
         else:
             continue
@@ -130,12 +136,12 @@ def main():
     else:
         gameLimit = int(gameLimit)
 
-    driver = webdriver.Chrome(executable_path='C:/Users/jkobler/Downloads/WebDriver/chromedriver.exe')
+    driver = webdriver.Chrome(executable_path='C:/Users/jkobler/WebDriver/chromedriver.exe')
     gamelogURL = playerURLs.get(player)
     gamelogURL = gamelogURL[:32] + "gamelog/" + gamelogURL[32:]
     driver.get(gamelogURL)
     content = driver.page_source
-    soup = BeautifulSoup(content)
+    soup = BeautifulSoup(content, features="html.parser")
     driver.quit()
     results = compareStatsToProp(soup, stat, overUnder, gameLimit, opponent)
 
